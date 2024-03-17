@@ -122,16 +122,19 @@ def parse_cards_links():
     time_end = datetime.datetime.now()
     diff = time_end - time_start
     print(f'Время парсинга:{diff.total_seconds() / 60} минут\nСобрано {len(res)} карточек, из которых {len(set(res))} уникальных')
+
+   # ТУТ Я ЗАПИСЫВАЮ ССЫЛКИ В ФАЙЛ
+   # ЭТО ТОЛЬКО ДЛЯ ТЕСТА, В ИДЕАЛЕ ССЫЛКИ ДОЖНЫ СРАЗУ ПОПАДАТЬ В ГЕТ СЕЛЛЕРС ФАЙЛ
+   #  with open('data/raw_data.txt', 'w', encoding='utf-8') as f:
+   #      f.write('\n'.join(list(set(res))))
+   #      f.close()
     return list(set(res))
-# p = parse_cards_links()
 
-with open("data/raw_data.txt", "r", encoding="utf-8") as f:
-    content = f.read().split('\n')
-content = [x.strip('"') for x in content]
+# Я ЧИТАЮ ССЫЛКИ ИЗ ФАЙЛА ЧТОБЫ БЫЛО БЫСТРЕЕ!!!
+# with open("data/raw_data.txt", "r", encoding="utf-8") as f:
+#     content = f.read().split('\n')
+# content = [x.strip('"') for x in content]
 
-# time.sleep(900)
-#134 135
-# from temp import data
 def get_sellers_file(data):
     ans = []
     shop_set = set()
@@ -144,8 +147,10 @@ def get_sellers_file(data):
             response = rq.get(data[i], headers=headers)
             soup = bs(response.text, 'lxml')
             res = soup.find('div', class_='m-product-shop m-box js-block-shop')
+            shop_counry = res.find('div', class_='shop-country').text.strip()
             shop_info = res.find('div', class_='shop_info')
             shop_name = shop_info.find('div',class_='shop-name').text.strip()
+
             if shop_name in shop_set:
                 continue
             shop_set.add(shop_name)
@@ -155,7 +160,7 @@ def get_sellers_file(data):
                 n_revs = n_revs[0].text[1:-1]
             else:
                 n_revs=0
-            answer = f'{n_revs};{shop_name};{online};{data[i]}'
+            answer = f'{n_revs};{shop_name};{shop_counry};{online};{data[i]}'
             # print("from part 1")
             print(answer)
             ans.append(answer)
@@ -172,62 +177,8 @@ def get_sellers_file(data):
         f.close()
     return content
 
-def get_sellers_file_1(data):
-    ans = []
-    shop_set = set()
-    error_counter = 0
-    t1 = datetime.datetime.now()
-    for i in range(3000, len(data)):
-        try:
+# get_sellers_file(content)
 
-            data[i] = data[i].strip('"')
-            headers = get_headers()
-            response = rq.get(data[i], headers=headers)
-            soup = bs(response.text, 'lxml')
-            res = soup.find('div', class_='m-product-shop m-box js-block-shop')
-            shop_info = res.find('div', class_='shop_info')
-            shop_name = shop_info.find('div',class_='shop-name').text.strip()
-            if shop_name in shop_set:
-                continue
-            shop_set.add(shop_name)
-            n_revs = shop_info.find_all('div', class_='m-review-info__total')
-            online = res.find('dl',class_='m-product-list').find('dd').text.strip()
-            if n_revs:
-                n_revs = n_revs[0].text[1:-1]
-            else:
-                n_revs=0
-            answer = f'{n_revs};{shop_name};{online};{data[i]}'
-            print("from part 2")
-            print(answer)
-            ans.append(answer)
-        except Exception as e:
-            print(f"A MISTAKE OCCURED: {e}")
-            error_counter += 1
-            continue
-    t2 = datetime.datetime.now()
-    diff = t2 - t1
-    print(f'Время парсинга:{diff.total_seconds() / 60} минут\nОшибок возникло: {error_counter}\nСобрана инфа о {len(shop_set)} уникальных магазинах')
-
-    with open("data/data.txt", "a", encoding="utf-8") as f:
-        content = '\n'.join(ans)
-        f.write(content)
-        f.close()
-    return content
-
-get_sellers_file(content)
-
-# async def main():
-#
-#     loop = asyncio.get_running_loop()
-#     with ThreadPoolExecutor() as pool:
-#         await asyncio.gather(
-#             loop.run_in_executor(pool, get_sellers_file(content)),
-#             loop.run_in_executor(pool, get_sellers_file_1(content)),
-#         )
-#
-#
-# # Call the async function from the script using asyncio.run ()
-# asyncio.run(main())
 
 
 
