@@ -8,6 +8,7 @@ import requests as rq
 from concurrent.futures import ThreadPoolExecutor
 import re
 
+import database
 import functions
 
 
@@ -31,12 +32,13 @@ def get_headers():
 
     return {'User-Agent': random.choice(ans)}
 
+
 def parse_cards_links(country_abbreviations):
     res = set()
     time_start = datetime.datetime.now()
     for cat in range(0, 18):
         # print(f"category {cat}")
-        for page in range(1, 6):
+        for page in range(1, 9):
             headers = get_headers()
             for reg in country_abbreviations.values():
                 print(f'parse page {page} country {reg} cat {cat}')
@@ -53,18 +55,18 @@ def parse_cards_links(country_abbreviations):
                         res.add(m['offers']['seller']['url'])
     time_end = datetime.datetime.now()
     diff = time_end - time_start
-    print(f'Время парсинга:{diff.total_seconds() / 60} минут\nСобрано {len(res)} карточек, из которых {len(set(res))} уникальных')
-   #
-   # # ТУТ Я ЗАПИСЫВАЮ ССЫЛКИ В ФАЙЛ
-   # # ЭТО ТОЛЬКО ДЛЯ ТЕСТА, В ИДЕАЛЕ ССЫЛКИ ДОЖНЫ СРАЗУ ПОПАДАТЬ В ГЕТ СЕЛЛЕРС ФАЙЛ
-   # #  with open('data/raw_data.txt', 'w', encoding='utf-8') as f:
-   # #      f.write('\n'.join(list(set(res))))
-   # #      f.close()
+    print(
+        f'Время парсинга:{diff.total_seconds() / 60} минут\nСобрано {len(res)} карточек, из которых {len(set(res))} уникальных')
+    #
+    # # ТУТ Я ЗАПИСЫВАЮ ССЫЛКИ В ФАЙЛ
+    # # ЭТО ТОЛЬКО ДЛЯ ТЕСТА, В ИДЕАЛЕ ССЫЛКИ ДОЖНЫ СРАЗУ ПОПАДАТЬ В ГЕТ СЕЛЛЕРС ФАЙЛ
+    # #  with open('data/raw_data.txt', 'w', encoding='utf-8') as f:
+    # #      f.write('\n'.join(list(set(res))))
+    # #      f.close()
     return list(res)
 
 
 # parse_cards_links(functions.country_abbreviations1)
-
 
 
 # Я ЧИТАЮ ССЫЛКИ ИЗ ФАЙЛА ЧТОБЫ БЫЛО БЫСТРЕЕ!!!
@@ -72,7 +74,8 @@ def parse_cards_links(country_abbreviations):
 #     content = f.read().split('\n')
 # content = [x.strip('"') for x in content]
 
-def get_sellers_file(data):
+def get_sellers_file(country_abbreviations):
+    data = parse_cards_links(country_abbreviations)
     ans = []
     shop_set = set()
     error_counter = 0
@@ -86,45 +89,31 @@ def get_sellers_file(data):
             shop_name = info.find('h1').text
             country = info.find('div', class_='shop-info-list').find('div', class_='info').text
             reviews = info.find('span', class_='shop-rating__total').text[1:-1]
-            online = info.find('div', class_='right-reply').find('div', class_='shop-info-table').find('div', class_='block').find('div', class_='content').text
-            # print(online)
-            # print(info)
-            # shop_name = res.find('div', class_='shop-name').text.strip()
-            # print(shop_name)
-            # shop_counry = res.find('div', class_='shop-country').text.strip()
-            # shop_info = res.find('div', class_='shop_info')
-            # shop_name = res.find('div',class_='shop-name').text.strip()
-            #
-            # if shop_name in shop_set:
-            #     continue
-            # shop_set.add(shop_name)
-            # n_revs = shop_info.find_all('div', class_='m-review-info__total')
-            # online = res.find('dl',class_='m-product-list').find('dd').text.strip()
-            # if n_revs:
-            #     n_revs = n_revs[0].text[1:-1]
-            # else:
-            #     n_revs=0
-            answer = f'{reviews};{shop_name};{country};{online};{data[i]}'
-            ans.append(answer)
-            # # print("from part 1")
-            print(answer)
+            online = info.find('div', class_='right-reply').find('div', class_='shop-info-table').find('div',
+                                                                                                       class_='block').find(
+                'div', class_='content').text
+            try:
+                reviews = int(reviews)
+            except:
+                reviews_int = ''
+                for j in reviews:
+                    if j.isdigit():
+                        reviews_int += j
+                reviews = int(reviews_int)
+            if reviews < 10 and online == '1 day ago':
+                answer = f'{reviews};{shop_name};{country};{online};{data[i]}'
+                database.add_to_sellers(data[i], answer)
+                print(answer)
+                ans.append(answer)
         except Exception as e:
             print(f"A MISTAKE OCCURED: {e}")
             error_counter += 1
             continue
     t2 = datetime.datetime.now()
     diff = t2 - t1
-    print(f'Время парсинга:{diff.total_seconds() / 60} минут\nОшибок возникло: {error_counter}\nСобрана инфа о {len(shop_set)} уникальных магазинах')
-    # with open("data/data.txt", "a", encoding="utf-8") as f:
-    #     content = '\n'.join(ans)
-    #     f.write(content)
-    #     f.write('\n')
-    #     f.close()
+    print(
+        f'Время парсинга:{diff.total_seconds() / 60} минут\nОшибок возникло: {error_counter}\nСобрана инфа о {len(shop_set)} уникальных магазинах')
     return ans
 
 # get_sellers_file(['https://en.pinkoi.com/store/yinke', 'https://en.pinkoi.com/store/exponent', 'https://en.pinkoi.com/store/goodviewvintageshop', 'https://en.pinkoi.com/store/xi-yao', 'https://en.pinkoi.com/store/tanluciana', 'https://en.pinkoi.com/store/queensybra-dress', 'https://en.pinkoi.com/store/jillpunk', 'https://en.pinkoi.com/store/klaraloveofficial', 'https://en.pinkoi.com/store/3twolight-vintage']
 # )
-
-
-
-

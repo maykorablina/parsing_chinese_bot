@@ -1,28 +1,42 @@
 import sqlite3
 import datetime
 from functions import PAYMENT_PERIOD
-conn = sqlite3.connect('bot.db')
-
-# c = conn.cursor()
+# conn = sqlite3.connect('bot.db')
 #
+# c = conn.cursor()
+# #
 # c.execute('''CREATE TABLE IF NOT EXISTS users
 #              (id INT UNSIGNED PRIMARY KEY,
 #               is_paid BOOLEAN,
 #               is_admin BOOLEAN,
 #               pay_time DATETIME,
-#               last_login DATETIME,
-#               last_page INT UNSIGNED)''')
-#
-#
-#
+#               last_login DATETIME)''')
+# #
+# #
+# #
 # c.execute('''CREATE TABLE IF NOT EXISTS sellers
-#     (id INT PRIMARY KEY,
+#     (link VARCHAR(100) PRIMARY KEY,
 #     description VARCHAR(1000),
 #     is_sent BOOLEAN)''')
 # #
 # conn.commit()
 # conn.close()
 
+def add_to_sellers(link, description):
+    conn = sqlite3.connect('bot.db')
+    cursor = conn.cursor()
+    insert_query = '''INSERT INTO sellers (link, description, is_sent) 
+                      VALUES (?, ?, ?)'''
+    try:
+        cursor.execute(insert_query, (link, description, 0))
+        conn.commit()
+        print("Record added successfully")
+    except sqlite3.IntegrityError:
+        print("Record already exists.")
+    except Exception as e:
+        print("An error occurred:", e)
+    finally:
+        conn.close()
 
 
 def clear_table(table):
@@ -78,7 +92,7 @@ def select_and_delete():
         conn.close()
         print("записи в таблице закончились")
         return False
-    cursor.execute("UPDATE sellers SET is_sent = ? WHERE id = ?", (1, good[0]))
+    cursor.execute("UPDATE sellers SET is_sent = ? WHERE link = ?", (1, good[0]))
     conn.commit()
     conn.close()
     return good
@@ -139,13 +153,13 @@ def add_user(user_id):
     is_paid = True
     is_admin = False
     last_login = datetime.datetime.now().replace(microsecond=0)
-    last_page = 0
+    # last_page = 0
     now = datetime.datetime.now()
     target_datetime = now - datetime.timedelta(seconds=1)
     last_session = target_datetime.strftime('%Y-%m-%d %H:%M:%S')
     cursor.execute('''
-    INSERT INTO users (id, is_paid, is_admin, pay_time, last_login, last_page)
-    VALUES (?, ?, ?, ?, ?, ?)''', (user_id, is_paid, is_admin, last_session, last_login, last_page))
+    INSERT INTO users (id, is_paid, is_admin, pay_time, last_login)
+    VALUES (?, ?, ?, ?, ?)''', (user_id, is_paid, is_admin, last_session, last_login))
     conn.commit()
     conn.close()
 
@@ -169,46 +183,31 @@ def check_user(user_id):
         return True
     else: return False
 
-
-
-# clear_table('users')
-
-# drop_table('sellers')
-# check_user(555581567)
-
-# conn = sqlite3.connect('bot.db')
-# cursor = conn.cursor()
-# cursor.execute("UPDATE users SET is_admin = 1 WHERE id = 555581567")
-# conn.commit()
-# conn.close()
-
-#
-# update_page(-1, 555581567)
-# print(select_all('users'))
 # drop_table('users')
+# drop_table('sellers')
 
-# #
 # import sqlite3
 #
-# conn = sqlite3.connect('bot.db')
+# # Подключаемся к базе данных SQLite
+# conn = sqlite3.connect('bot.db')  # Замените 'your_database_name.db' на имя вашей базы данных
 # cursor = conn.cursor()
-
-# Данные для вставки
-# user_id = 555581567
-# is_paid = True
-# is_admin = True
-# last_session = '2023-01-01 10:00:00'
-# last_login = '2023-01-01 11:00:00'
-# last_page = 0
 #
-# # Вставляем данные
-# cursor.execute('''
-# INSERT INTO users (id, is_paid, is_admin, pay_time, last_login, last_page)
-# VALUES (?, ?, ?, ?, ?, ?)''', (user_id, is_paid, is_admin, last_session, last_login, last_page))
+# # ID записи, которую вы хотите обновить, и новое значение для поля 'description'
+# record_id = 555581567  # Пример ID, который нужно обновить
+# new_description = 0  # Новое значение для поля 'description'
 #
-# # Сохраняем изменения
-# conn.commit()
+# # SQL-запрос для обновления значения в таблице
+# update_query = '''UPDATE users
+#                   SET is_paid = ?
+#                   WHERE id = ?'''
 #
-# # Закрываем соединение
-# conn.close()
-
+# # Выполняем запрос
+# try:
+#     cursor.execute(update_query, (new_description, record_id))
+#     conn.commit()  # Подтверждаем изменения
+#     print("Record updated successfully")
+# except sqlite3.Error as e:
+#     print("An error occurred:", e)
+# finally:
+#     conn.close()  # Закрываем подключение к базе данных
+# print(len(select_all('sellers')))
