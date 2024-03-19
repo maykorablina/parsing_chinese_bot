@@ -3,7 +3,7 @@ import time
 
 import parser as ps
 import functions as fx
-# def function1():
+# def f1():
 #     res = ps.parse_cards_links(fx.country_abbreviations1)
 #     time.sleep(1)
 #     with open('data/raw_data.txt', 'a', encoding='utf-8') as f:
@@ -11,15 +11,22 @@ import functions as fx
 #          f.write('\n')
 #          f.close()
 #
-# def function2():
+# def f2():
 #     res = ps.parse_cards_links(fx.country_abbreviations2)
 #     time.sleep(1)
 #     with open('data/raw_data.txt', 'a', encoding='utf-8') as f:
 #          f.write('\n'.join(res))
 #          f.write('\n')
 #          f.close()
-# def function3():
+# def f3():
 #     res = ps.parse_cards_links(fx.country_abbreviations3)
+#     time.sleep(1)
+#     with open('data/raw_data.txt', 'a', encoding='utf-8') as f:
+#          f.write('\n'.join(res))
+#          f.write('\n')
+#          f.close()
+# def f4():
+#     res = ps.parse_cards_links(fx.country_abbreviations4)
 #     time.sleep(1)
 #     with open('data/raw_data.txt', 'a', encoding='utf-8') as f:
 #          f.write('\n'.join(res))
@@ -27,7 +34,7 @@ import functions as fx
 #          f.close()
 with open("data/raw_data.txt", "r", encoding="utf-8") as f:
     content = f.read().split('\n')
-content = [x.strip('"') for x in content]
+
 content = fx.split_list_into_four_parts(content)
 
 def f1(content):
@@ -64,6 +71,11 @@ def f4(content):
         f.write('\n')
         f.close()
 
+# thread1 = threading.Thread(target=f1)
+# thread2 = threading.Thread(target=f2)
+# thread3 = threading.Thread(target=f3)
+# thread4 = threading.Thread(target=f4)
+
 thread1 = threading.Thread(target=f1, args=(content[0],))
 thread2 = threading.Thread(target=f2, args=(content[1],))
 thread3 = threading.Thread(target=f3, args=(content[2],))
@@ -79,5 +91,5 @@ thread2.join()
 thread3.join()
 thread4.join()
 
-fx.remove_duplicate_lines("data/raw_data.txt")
-fx.count_unique_lines("data/raw_data.txt")
+# fx.remove_duplicate_lines("data/raw_data.txt")
+# fx.count_unique_lines("data/raw_data.txt")

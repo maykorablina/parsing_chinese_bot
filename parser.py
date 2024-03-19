@@ -1,4 +1,5 @@
 import datetime
+import json
 import random
 import time
 import asyncio
@@ -31,7 +32,7 @@ def get_headers():
     return {'User-Agent': random.choice(ans)}
 
 def parse_cards_links(country_abbreviations):
-    res = []
+    res = set()
     time_start = datetime.datetime.now()
     for cat in range(0, 18):
         # print(f"category {cat}")
@@ -46,26 +47,23 @@ def parse_cards_links(country_abbreviations):
                 soup = bs(response.text, 'lxml')
                 pattern = '<script type="application\/ld\+json">(.*?)<\/script>'
                 matches = re.findall(pattern, str(soup))
-                print(matches)
-                # soup.find_all()
-                # print(str(soup))
-                time.sleep(60)
-                pattern = r'"https://en.pinkoi.com/product/[A-Za-z0-9]+"'
-                matches = re.findall(pattern, str(soup))
-                res += matches
+                for m in matches:
+                    m = json.loads(m)
+                    if m['@type'] == 'Product':
+                        res.add(m['offers']['seller']['url'])
     time_end = datetime.datetime.now()
     diff = time_end - time_start
     print(f'Время парсинга:{diff.total_seconds() / 60} минут\nСобрано {len(res)} карточек, из которых {len(set(res))} уникальных')
+   #
+   # # ТУТ Я ЗАПИСЫВАЮ ССЫЛКИ В ФАЙЛ
+   # # ЭТО ТОЛЬКО ДЛЯ ТЕСТА, В ИДЕАЛЕ ССЫЛКИ ДОЖНЫ СРАЗУ ПОПАДАТЬ В ГЕТ СЕЛЛЕРС ФАЙЛ
+   # #  with open('data/raw_data.txt', 'w', encoding='utf-8') as f:
+   # #      f.write('\n'.join(list(set(res))))
+   # #      f.close()
+    return list(res)
 
-   # ТУТ Я ЗАПИСЫВАЮ ССЫЛКИ В ФАЙЛ
-   # ЭТО ТОЛЬКО ДЛЯ ТЕСТА, В ИДЕАЛЕ ССЫЛКИ ДОЖНЫ СРАЗУ ПОПАДАТЬ В ГЕТ СЕЛЛЕРС ФАЙЛ
-   #  with open('data/raw_data.txt', 'w', encoding='utf-8') as f:
-   #      f.write('\n'.join(list(set(res))))
-   #      f.close()
-    return list(set(res))
 
-
-parse_cards_links(functions.country_abbreviations1)
+# parse_cards_links(functions.country_abbreviations1)
 
 
 
@@ -81,28 +79,35 @@ def get_sellers_file(data):
     t1 = datetime.datetime.now()
     for i in range(len(data)):
         try:
-            data[i] = data[i].strip('"')
             headers = get_headers()
             response = rq.get(data[i], headers=headers)
             soup = bs(response.text, 'lxml')
-            res = soup.find('div', class_='m-product-shop m-box js-block-shop')
-            shop_counry = res.find('div', class_='shop-country').text.strip()
-            shop_info = res.find('div', class_='shop_info')
-            shop_name = shop_info.find('div',class_='shop-name').text.strip()
-
-            if shop_name in shop_set:
-                continue
-            shop_set.add(shop_name)
-            n_revs = shop_info.find_all('div', class_='m-review-info__total')
-            online = res.find('dl',class_='m-product-list').find('dd').text.strip()
-            if n_revs:
-                n_revs = n_revs[0].text[1:-1]
-            else:
-                n_revs=0
-            answer = f'{n_revs};{shop_name};{shop_counry};{online};{data[i]}'
-            # print("from part 1")
-            print(answer)
+            info = soup.find('div', class_='info-top')
+            shop_name = info.find('h1').text
+            country = info.find('div', class_='shop-info-list').find('div', class_='info').text
+            reviews = info.find('span', class_='shop-rating__total').text[1:-1]
+            online = info.find('div', class_='right-reply').find('div', class_='shop-info-table').find('div', class_='block').find('div', class_='content').text
+            # print(online)
+            # print(info)
+            # shop_name = res.find('div', class_='shop-name').text.strip()
+            # print(shop_name)
+            # shop_counry = res.find('div', class_='shop-country').text.strip()
+            # shop_info = res.find('div', class_='shop_info')
+            # shop_name = res.find('div',class_='shop-name').text.strip()
+            #
+            # if shop_name in shop_set:
+            #     continue
+            # shop_set.add(shop_name)
+            # n_revs = shop_info.find_all('div', class_='m-review-info__total')
+            # online = res.find('dl',class_='m-product-list').find('dd').text.strip()
+            # if n_revs:
+            #     n_revs = n_revs[0].text[1:-1]
+            # else:
+            #     n_revs=0
+            answer = f'{reviews};{shop_name};{country};{online};{data[i]}'
             ans.append(answer)
+            # # print("from part 1")
+            print(answer)
         except Exception as e:
             print(f"A MISTAKE OCCURED: {e}")
             error_counter += 1
@@ -117,7 +122,8 @@ def get_sellers_file(data):
     #     f.close()
     return ans
 
-# get_sellers_file(content)
+# get_sellers_file(['https://en.pinkoi.com/store/yinke', 'https://en.pinkoi.com/store/exponent', 'https://en.pinkoi.com/store/goodviewvintageshop', 'https://en.pinkoi.com/store/xi-yao', 'https://en.pinkoi.com/store/tanluciana', 'https://en.pinkoi.com/store/queensybra-dress', 'https://en.pinkoi.com/store/jillpunk', 'https://en.pinkoi.com/store/klaraloveofficial', 'https://en.pinkoi.com/store/3twolight-vintage']
+# )
 
 
 
